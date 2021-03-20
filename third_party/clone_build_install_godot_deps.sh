@@ -45,7 +45,7 @@ git_clone_if_not_exist () {
   fi
 }
 
-compile_embree_ogg_vorbis () {
+compile_embree () {
   MAKE_GENERATOR=$1
   BUILD_PATH=$2
   INSTALL_PATH=$3
@@ -67,43 +67,23 @@ compile_embree_ogg_vorbis () {
     cmake "${EMBREE_CONFIG[@]}" .. &&\
     cmake --build . --config Release -- "${BUILD_FLAGS[@]}" && cd .. && cd ..
 
-  # Build libOgg
-  cd "${SCRIPT_DIR}"
-  OGG_CONFIG=("${CONFIG_WITH_GENERATOR[@]}")
-  OGG_CONFIG+=(-DCMAKE_POSITION_INDEPENDENT_CODE:BOOL=true)
-  cd ogg && rm -fr "${BUILD_PATH}" && mkdir "${BUILD_PATH}" && cd "${BUILD_PATH}" &&\
-    cmake "${OGG_CONFIG[@]}" .. &&\
-    cmake --build . --config Release --target install -- "${BUILD_FLAGS[@]}" && cd .. && cd ..
-
-  # Build libVorbis
-  cd "${SCRIPT_DIR}"
-  VORBIS_CONFIG=("${CONFIG_WITH_GENERATOR[@]}")
-  VORBIS_CONFIG+=(-DOGG_INCLUDE_DIRS="${SCRIPT_DIR}/${INSTALL_PATH}"/include/)
-  VORBIS_CONFIG+=(-DOGG_LIBRARIES="${SCRIPT_DIR}/${INSTALL_PATH}"/)
-  VORBIS_CONFIG+=(-DCMAKE_POSITION_INDEPENDENT_CODE:BOOL=true)
-  cd vorbis && rm -fr "${BUILD_PATH}" && mkdir "${BUILD_PATH}" && cd "${BUILD_PATH}" &&\
-    cmake "${VORBIS_CONFIG[@]}" .. &&\
-    cmake --build . --config Release --target install -- "${BUILD_FLAGS[@]}" && cd .. && cd ..
 }
 
 cd "${SCRIPT_DIR}"
 git_clone_if_not_exist "embree" "https://github.com/embree/embree.git" "v2.16.5" "libembree.patch"
-git_clone_if_not_exist "ogg" "https://github.com/xiph/ogg.git" "master" "libogg.patch"
-git_clone_if_not_exist "vorbis" "https://github.com/xiph/vorbis" "master" "libvorbis.patch"
-git_clone_if_not_exist "nativeaudioplugins" "https://github.com/Unity-Technologies/NativeAudioPlugins.git" "master"
 
 case "$(uname -s)" in
   Darwin)
     CONFIG_FLAGS+=(-DCMAKE_OSX_ARCHITECTURES=x86_64)
     BUILD_FLAGS+=(-j "${NUM_CORES}")
     DEFAULT_GENERATOR_FLAG=""
-    compile_embree_ogg_vorbis "${DEFAULT_GENERATOR_FLAG}" "build" "install"
+    compile_embree "${DEFAULT_GENERATOR_FLAG}" "build" "install"
     ;;
 
   Linux)
     BUILD_FLAGS+=(-j "${NUM_CORES}")
     DEFAULT_GENERATOR_FLAG=""
-    compile_embree_ogg_vorbis "${DEFAULT_GENERATOR_FLAG}" "build" "install"
+    compile_embree "${DEFAULT_GENERATOR_FLAG}" "build" "install"
     ;;
 
   CYGWIN*|MINGW*|MSYS*)
@@ -112,11 +92,8 @@ case "$(uname -s)" in
 
     # Create 64bit builds
     WIN64_GENERATOR_FLAG="${MSVC_GENERATOR}"
-    compile_embree_ogg_vorbis "${WIN64_GENERATOR_FLAG}" "build64" "install64"
+    compile_embree "${WIN64_GENERATOR_FLAG}" "build64" "install64"
 
-    # Create 32bit builds
-    # WIN32_GENERATOR_FLAG="${MSVC_GENERATOR}"
-    # compile_embree_ogg_vorbis "${WIN32_GENERATOR_FLAG}" "build32" "install32"
     ;;
 
   *)
