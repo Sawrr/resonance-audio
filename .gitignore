@@ -12,8 +12,13 @@ third_party/vorbis/
 third_party/VST_SDK/
 third_party/WwiseIncludes/
 
+third_party/install32
+third_party/install64
+
 # Ignore build artifacts and install directories by default
 build/
 install/
 
 .DS_Store
+
+.vscode

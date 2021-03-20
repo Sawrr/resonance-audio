@@ -20,8 +20,8 @@ limitations under the License.
 #include <array>
 #include <vector>
 
-#include "embree2/rtcore.h"
-#include "embree2/rtcore_ray.h"
+#include "embree3/rtcore.h"
+#include "embree3/rtcore_ray.h"
 #include "base/constants_and_types.h"
 
 namespace vraudio {
@@ -174,7 +174,14 @@ class RTCORE_ALIGN(16) AcousticRay : public RTCRay {
   // @param scene An RTCScene to test the intersection.
   // @return True if an intersection is found.
   bool Intersect(RTCScene scene) {
-    rtcIntersect(scene, *this);
+    {
+      RTCIntersectContext context;
+      rtcInitIntersectContext(&context);
+      rtcIntersect1(scene,&context,&*this);
+      *this.hit.Ng_x = -*this.hit.Ng_x; // EMBREE_FIXME: only correct for triangles,quads, and subdivision surfaces
+      *this.hit.Ng_y = -*this.hit.Ng_y;
+      *this.hit.Ng_z = -*this.hit.Ng_z;
+    }
     return geomID != RTC_INVALID_GEOMETRY_ID;
   }
 
